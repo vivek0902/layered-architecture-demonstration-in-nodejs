@@ -4,7 +4,7 @@ interface Config {
   MONGODB: { URI: string };
   LOG_LEVEL: string;
   API: {
-    BASE_URL: string;
+    PREFIX: string;
     VERSION: string;
   };
   CORS: {
@@ -32,7 +32,7 @@ export const config: Config = {
   LOG_LEVEL: process.env.LOG_LEVEL || 'info',
 
   API: {
-    BASE_URL: process.env.API_BASE_URL || '/api/v1',
+    PREFIX: process.env.API_PREFIX || '/api/v1',
     VERSION: process.env.API_VERSION || 'v1',
   },
 

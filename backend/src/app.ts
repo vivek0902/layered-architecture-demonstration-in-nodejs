@@ -2,7 +2,7 @@ import './env';
 import express from 'express';
 import cors from 'cors';
 import { config } from './config';
-
+import apiRoutes from './routes/index.route';
 const app = express();
 
 app.use(
@@ -23,4 +23,5 @@ app.get('/', (req, res) => {
   });
 });
 
+app.use(config.API.PREFIX, apiRoutes);
 export default app;
