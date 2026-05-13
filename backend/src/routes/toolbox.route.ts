@@ -6,8 +6,10 @@ import { TOOLS_ROUTES } from '../constants';
 const router = express.Router();
 
 const toolRepository = new ToolRepository();
-const toolService = new ToolService(toolRepository);
-const toolController = new ToolController(toolService);
+const toolService = new ToolService<ToolRepository>(toolRepository);
+const toolController = new ToolController<ToolService<ToolRepository>>(
+  toolService,
+);
 
 // localhost:5000/api/tools/
 router.get(TOOLS_ROUTES.ALL, toolController.getAllTools);

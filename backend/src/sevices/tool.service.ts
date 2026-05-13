@@ -1,12 +1,91 @@
-import ToolRepository from '../repository/tool.repository';
+import { IToolDocument, ToolCategory } from '../models/tool.schema';
 
-class ToolService {
-  private toolRepository: any;
-  constructor(toolRepository: any) {
+type ToolCreateInput = {
+  name: string;
+  description: string;
+  category: ToolCategory;
+  url: string;
+  isPopular?: boolean;
+  tags?: string[];
+};
+
+type ToolUpdateInput = Partial<ToolCreateInput>;
+
+type ToolQueryOptions = {
+  limit?: number;
+  skip?: number;
+  sort?: Record<string, 1 | -1>;
+};
+
+type BulkCreateFailure = {
+  data: ToolCreateInput;
+  error: string;
+};
+
+type BulkDeleteFailure = {
+  id: string;
+  error: string;
+};
+
+type BulkCreateResult = {
+  created: IToolDocument[];
+  failed: BulkCreateFailure[];
+  total: number;
+};
+
+type BulkDeleteResult = {
+  deleted: IToolDocument[];
+  failed: BulkDeleteFailure[];
+  total: number;
+};
+
+const getErrorMessage = (error: unknown): string =>
+  error instanceof Error ? error.message : 'Unknown error';
+
+const getValidationMessages = (error: unknown): string[] => {
+  if (
+    typeof error === 'object' &&
+    error !== null &&
+    'name' in error &&
+    (error as { name?: string }).name === 'ValidationError' &&
+    'errors' in error &&
+    typeof (error as { errors?: unknown }).errors === 'object' &&
+    (error as { errors?: unknown }).errors !== null
+  ) {
+    const validationError = error as {
+      errors: Record<string, { message?: string }>;
+    };
+
+    return Object.values(validationError.errors).map(
+      (validationItem) => validationItem.message ?? 'Invalid value',
+    );
+  }
+
+  return [];
+};
+
+interface IToolRepositoryShape {
+  findByName(name: string): Promise<any>;
+  findAll(
+    filters: Record<string, unknown>,
+    options: ToolQueryOptions,
+  ): Promise<any>;
+  findById(id: string): Promise<any>;
+  updateById(id: string, updateData: Record<string, unknown>): Promise<any>;
+  deleteById(id: string): Promise<any>;
+  create(data: ToolCreateInput): Promise<any>;
+  findByCategory(category: ToolCategory): Promise<any>;
+  findPopular(): Promise<any>;
+  search(query: string): Promise<IToolDocument[]>;
+}
+
+class ToolService<TRepository extends IToolRepositoryShape> {
+  private toolRepository: TRepository;
+  constructor(toolRepository: TRepository) {
     this.toolRepository = toolRepository;
   }
 
-  async createTool(toolData: any) {
+  async createTool(toolData: ToolCreateInput): Promise<IToolDocument> {
     try {
       const existingTool = await this.toolRepository.findByName(toolData.name);
       if (existingTool) {
@@ -14,17 +93,15 @@ class ToolService {
       }
       const savedTool = await this.toolRepository.create(toolData);
       return savedTool;
-    } catch (error: any) {
-      throw new Error(`Failed to create tool: ${error.message}`);
+    } catch (error: unknown) {
+      throw new Error(`Failed to create tool: ${getErrorMessage(error)}`);
     }
   }
 
-  async createBulkTools(toolsData: any[]) {
-    const result: {
-      created: any[];
-      failed: { data: any; error: string }[];
-      total: number;
-    } = {
+  async createBulkTools(
+    toolsData: ToolCreateInput[],
+  ): Promise<BulkCreateResult> {
+    const result: BulkCreateResult = {
       created: [],
       failed: [],
       total: toolsData.length,
@@ -34,10 +111,10 @@ class ToolService {
       try {
         const createdTool = await this.createTool(toolData);
         result.created.push(createdTool);
-      } catch (error: any) {
+      } catch (error: unknown) {
         result.failed.push({
           data: toolData,
-          error: error.message,
+          error: getErrorMessage(error),
         });
       }
     }
@@ -45,28 +122,34 @@ class ToolService {
     return result;
   }
 
-  async getAllTools(filters = {}, options = {}) {
+  async getAllTools(
+    filters: Record<string, unknown> = {},
+    options: ToolQueryOptions = {},
+  ): Promise<IToolDocument[]> {
     try {
       const tools = await this.toolRepository.findAll(filters, options);
       return tools;
-    } catch (error: any) {
-      throw new Error(`Failed to fetch tools: ${error.message}`);
+    } catch (error: unknown) {
+      throw new Error(`Failed to fetch tools: ${getErrorMessage(error)}`);
     }
   }
 
-  async getToolById(id: string) {
+  async getToolById(id: string): Promise<IToolDocument> {
     try {
       const tool = await this.toolRepository.findById(id);
       if (!tool) {
         throw new Error('Tool not found');
       }
       return tool;
-    } catch (error: any) {
-      throw new Error(`Failed to fetch tool: ${error.message}`);
+    } catch (error: unknown) {
+      throw new Error(`Failed to fetch tool: ${getErrorMessage(error)}`);
     }
   }
 
-  async updateTool(id: string, updateData: any) {
+  async updateTool(
+    id: string,
+    updateData: ToolUpdateInput,
+  ): Promise<IToolDocument> {
     try {
       const tool = await this.toolRepository.updateById(id, updateData);
 
@@ -75,35 +158,34 @@ class ToolService {
       }
 
       return tool;
-    } catch (error: any) {
-      if (error.name === 'ValidationError') {
-        const messages = Object.values(error.errors).map(
-          (err: any) => err.message,
-        );
+    } catch (error: unknown) {
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'name' in error &&
+        (error as { name?: string }).name === 'ValidationError'
+      ) {
+        const messages = getValidationMessages(error);
         throw new Error(`Validation failed: ${messages.join(', ')}`);
       }
-      throw new Error(`Failed to update tool: ${error.message}`);
+      throw new Error(`Failed to update tool: ${getErrorMessage(error)}`);
     }
   }
 
-  async deleteTool(id: string) {
+  async deleteTool(id: string): Promise<IToolDocument> {
     try {
       const tool = await this.toolRepository.deleteById(id);
       if (!tool) {
         throw new Error('Tool not found');
       }
       return tool;
-    } catch (error: any) {
-      throw new Error(`Failed to delete tool: ${error.message}`);
+    } catch (error: unknown) {
+      throw new Error(`Failed to delete tool: ${getErrorMessage(error)}`);
     }
   }
 
-  async deleteBulkTools(ids: string[]) {
-    const results: {
-      deleted: any[];
-      failed: { id: string; error: string }[];
-      total: number;
-    } = {
+  async deleteBulkTools(ids: string[]): Promise<BulkDeleteResult> {
+    const results: BulkDeleteResult = {
       deleted: [],
       failed: [],
       total: ids.length,
@@ -113,10 +195,10 @@ class ToolService {
       try {
         const deletedTool = await this.deleteTool(id);
         results.deleted.push(deletedTool);
-      } catch (error: any) {
+      } catch (error: unknown) {
         results.failed.push({
           id,
-          error: error.message,
+          error: getErrorMessage(error),
         });
       }
     }
@@ -124,30 +206,34 @@ class ToolService {
     return results;
   }
 
-  async getToolsByCategory(category: any) {
+  async getToolsByCategory(category: ToolCategory): Promise<IToolDocument[]> {
     try {
       const tools = await this.toolRepository.findByCategory(category);
       return tools;
-    } catch (error: any) {
-      throw new Error(`Failed to fetch tools by category: ${error.message}`);
+    } catch (error: unknown) {
+      throw new Error(
+        `Failed to fetch tools by category: ${getErrorMessage(error)}`,
+      );
     }
   }
 
-  async getPopularTools() {
+  async getPopularTools(): Promise<IToolDocument[]> {
     try {
       const tools = await this.toolRepository.findPopular();
       return tools;
-    } catch (error: any) {
-      throw new Error(`Failed to fetch popular tools: ${error.message}`);
+    } catch (error: unknown) {
+      throw new Error(
+        `Failed to fetch popular tools: ${getErrorMessage(error)}`,
+      );
     }
   }
 
-  async searchTools(query: string) {
+  async searchTools(query: string): Promise<IToolDocument[]> {
     try {
       const tools = await this.toolRepository.search(query);
       return tools;
-    } catch (error: any) {
-      throw new Error(`Failed to search tools: ${error.message}`);
+    } catch (error: unknown) {
+      throw new Error(`Failed to search tools: ${getErrorMessage(error)}`);
     }
   }
 }

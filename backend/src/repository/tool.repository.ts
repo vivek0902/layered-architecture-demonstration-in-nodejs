@@ -1,9 +1,13 @@
 import BaseRepository from './base.repository';
-import Tool, { IToolModel, ToolCategory } from '../models/tool.schema';
+import Tool, {
+  IToolDocument,
+  IToolModel,
+  ToolCategory,
+} from '../models/tool.schema';
 
 const ToolModel = Tool as IToolModel;
 
-class ToolRepository extends BaseRepository<any> {
+class ToolRepository extends BaseRepository<IToolDocument> {
   constructor() {
     super(ToolModel);
   }
