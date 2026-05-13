@@ -1,9 +1,9 @@
 import ToolRepository from '../repository/tool.repository';
 
 class ToolService {
-  private toolRepository: typeof ToolRepository;
-  constructor() {
-    this.toolRepository = ToolRepository;
+  private toolRepository: any;
+  constructor(toolRepository: any) {
+    this.toolRepository = toolRepository;
   }
 
   async createTool(toolData: any) {
@@ -152,4 +152,4 @@ class ToolService {
   }
 }
 
-export default new ToolService();
+export default ToolService;

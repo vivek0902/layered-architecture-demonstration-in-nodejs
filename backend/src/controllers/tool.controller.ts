@@ -1,5 +1,4 @@
 import { Request, Response } from 'express';
-import ToolService from '../sevices/tool.service';
 import { ToolCategory } from '../models/tool.schema';
 import ApiResponse from '../utils/apiResponse.util';
 import { HTTP_STATUS, RESPONSE_MESSAGES } from '../constants';
@@ -7,9 +6,10 @@ import { HTTP_STATUS, RESPONSE_MESSAGES } from '../constants';
 class ToolController {
   private toolService: any;
 
-  constructor() {
-    this.toolService = ToolService;
+  constructor(toolService: any) {
+    this.toolService = toolService;
   }
+
   /**
    *
    * @param {*} req

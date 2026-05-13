@@ -34,4 +34,4 @@ class ToolRepository extends BaseRepository<any> {
   }
 }
 
-export default new ToolRepository();
+export default ToolRepository;

@@ -1,9 +1,13 @@
 import express from 'express';
 import ToolController from '../controllers/tool.controller';
+import ToolService from '../sevices/tool.service';
+import ToolRepository from '../repository/tool.repository';
 import { TOOLS_ROUTES } from '../constants';
 const router = express.Router();
 
-const toolController = new ToolController();
+const toolRepository = new ToolRepository();
+const toolService = new ToolService(toolRepository);
+const toolController = new ToolController(toolService);
 
 // localhost:5000/api/tools/
 router.get(TOOLS_ROUTES.ALL, toolController.getAllTools);
