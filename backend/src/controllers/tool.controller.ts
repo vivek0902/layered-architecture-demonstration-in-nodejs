@@ -1,9 +1,11 @@
-import ToolService from '../sevices/tool.service';
 import { Request, Response } from 'express';
+import ToolService from '../sevices/tool.service';
 import { ToolCategory } from '../models/tool.schema';
+import ApiResponse from '../utils/apiResponse.util';
+import { HTTP_STATUS, RESPONSE_MESSAGES } from '../constants';
 
 class ToolController {
-  private toolService: typeof ToolService;
+  private toolService: any;
 
   constructor() {
     this.toolService = ToolService;
@@ -38,16 +40,17 @@ class ToolController {
         tools = await this.toolService.getAllTools(filters, options);
       }
 
-      res.status(200).json({
-        success: true,
-        count: tools.length,
-        data: tools,
-      });
+      return ApiResponse.success(
+        res,
+        RESPONSE_MESSAGES.TOOL.FETCHED,
+        tools,
+        HTTP_STATUS.OK,
+        {
+          count: tools.length,
+        },
+      );
     } catch (error: any) {
-      res.status(500).json({
-        success: false,
-        message: error.message,
-      });
+      return ApiResponse.error(res, error.message);
     }
   };
 
@@ -57,16 +60,9 @@ class ToolController {
 
       const tool = await this.toolService.createTool(toolData);
 
-      res.status(201).json({
-        success: true,
-        message: 'Tool created successfully',
-        data: tool,
-      });
+      return ApiResponse.created(res, RESPONSE_MESSAGES.TOOL.CREATED, tool);
     } catch (error: any) {
-      res.status(500).json({
-        success: false,
-        message: error.message,
-      });
+      return ApiResponse.error(res, error.message);
     }
   };
 
@@ -75,16 +71,10 @@ class ToolController {
       const { id } = req.params;
       const tool = await this.toolService.getToolById(id);
 
-      res.status(200).json({
-        success: true,
-        data: tool,
-      });
+      return ApiResponse.success(res, RESPONSE_MESSAGES.TOOL.FETCHED, tool);
     } catch (error: any) {
       const statusCode = error.message.includes('not found') ? 404 : 500;
-      res.status(statusCode).json({
-        success: false,
-        message: error.message,
-      });
+      return ApiResponse.error(res, error.message, statusCode);
     }
   };
 
@@ -93,26 +83,24 @@ class ToolController {
       const { tools } = req.body;
 
       if (!Array.isArray(tools)) {
-        return res.status(400).json({
-          success: false,
-          message: 'Tools should be an array',
-        });
+        return ApiResponse.badRequest(
+          res,
+          RESPONSE_MESSAGES.ERROR.ARRAY_REQUIRED,
+        );
       }
 
       const results = await this.toolService.createBulkTools(tools);
 
       const statusCode = results.failed.length === 0 ? 201 : 207;
 
-      res.status(statusCode).json({
-        success: true,
-        message: `Bulk operation completed. ${results.created.length} created, ${results.failed.length} failed`,
-        data: results,
-      });
+      return ApiResponse.success(
+        res,
+        `${RESPONSE_MESSAGES.TOOL.BULK_CREATED}: ${results.created.length} created, ${results.failed.length} failed`,
+        results,
+        statusCode,
+      );
     } catch (error: any) {
-      res.status(500).json({
-        success: false,
-        message: error.message,
-      });
+      return ApiResponse.error(res, error.message);
     }
   };
 
@@ -123,21 +111,14 @@ class ToolController {
 
       const tool = await this.toolService.updateTool(id, updateData);
 
-      res.status(200).json({
-        success: true,
-        message: 'Tool updated successfully',
-        data: tool,
-      });
+      return ApiResponse.success(res, RESPONSE_MESSAGES.TOOL.UPDATED, tool);
     } catch (error: any) {
       const statusCode = error.message.includes('not found')
         ? 404
         : error.message.includes('Validation failed')
           ? 400
           : 500;
-      res.status(statusCode).json({
-        success: false,
-        message: error.message,
-      });
+      return ApiResponse.error(res, error.message, statusCode);
     }
   };
 
@@ -146,17 +127,10 @@ class ToolController {
       const { id } = req.params;
       const tool = await this.toolService.deleteTool(id);
 
-      res.status(200).json({
-        success: true,
-        message: 'Tool deleted successfully',
-        data: tool,
-      });
+      return ApiResponse.success(res, RESPONSE_MESSAGES.TOOL.DELETED, tool);
     } catch (error: any) {
       const statusCode = error.message.includes('not found') ? 404 : 500;
-      res.status(statusCode).json({
-        success: false,
-        message: error.message,
-      });
+      return ApiResponse.error(res, error.message, statusCode);
     }
   };
 
@@ -165,26 +139,24 @@ class ToolController {
       const { ids } = req.body;
 
       if (!Array.isArray(ids)) {
-        return res.status(400).json({
-          success: false,
-          message: 'IDs should be an array',
-        });
+        return ApiResponse.badRequest(
+          res,
+          RESPONSE_MESSAGES.ERROR.ARRAY_REQUIRED,
+        );
       }
 
       const results = await this.toolService.deleteBulkTools(ids);
 
       const statusCode = results.failed.length === 0 ? 200 : 207;
 
-      res.status(statusCode).json({
-        success: true,
-        message: `Bulk deletion completed. ${results.deleted.length} deleted, ${results.failed.length} failed`,
-        data: results,
-      });
+      return ApiResponse.success(
+        res,
+        `${RESPONSE_MESSAGES.TOOL.BULK_DELETED}: ${results.deleted.length} deleted, ${results.failed.length} failed`,
+        results,
+        statusCode,
+      );
     } catch (error: any) {
-      res.status(500).json({
-        success: false,
-        message: error.message,
-      });
+      return ApiResponse.error(res, error.message);
     }
   };
 
@@ -193,16 +165,17 @@ class ToolController {
       const { category } = req.params;
       const tools = await this.toolService.getToolsByCategory(category);
 
-      res.status(200).json({
-        success: true,
-        count: tools.length,
-        data: tools,
-      });
+      return ApiResponse.success(
+        res,
+        RESPONSE_MESSAGES.TOOL.FETCHED,
+        tools,
+        HTTP_STATUS.OK,
+        {
+          count: tools.length,
+        },
+      );
     } catch (error: any) {
-      res.status(500).json({
-        success: false,
-        message: error.message,
-      });
+      return ApiResponse.error(res, error.message);
     }
   };
 
@@ -210,16 +183,17 @@ class ToolController {
     try {
       const tools = await this.toolService.getPopularTools();
 
-      res.status(200).json({
-        success: true,
-        count: tools.length,
-        data: tools,
-      });
+      return ApiResponse.success(
+        res,
+        RESPONSE_MESSAGES.TOOL.FETCHED,
+        tools,
+        HTTP_STATUS.OK,
+        {
+          count: tools.length,
+        },
+      );
     } catch (error: any) {
-      res.status(500).json({
-        success: false,
-        message: error.message,
-      });
+      return ApiResponse.error(res, error.message);
     }
   };
 }
