@@ -37,8 +37,12 @@ export const config: Config = {
   },
 
   CORS: {
-    ORIGIN: process.env.CORS_ORIGIN || '*',
-    CREDENTIALS: process.env.CORS_CREDENTIALS === 'true' || false,
+    ORIGIN:
+      process.env.CORS_ORIGIN ||
+      (process.env.NODE_ENV === 'production'
+        ? process.env.FRONTEND_URL || '*'
+        : '*'),
+    CREDENTIALS: process.env.CORS_CREDENTIALS === 'true',
     METHODS: process.env.CORS_METHODS || 'GET,POST,PUT,DELETE,OPTIONS',
   },
   DNS: {

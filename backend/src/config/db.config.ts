@@ -17,9 +17,12 @@ class DatabaseConfig {
       };
 
       await mongoose.connect(uri, options);
+      console.log('Connected to MongoDB successfully');
     } catch (error) {
-      console.error('Error connecting to MongoDB:', error);
-      throw error;
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      console.error('Error connecting to MongoDB:', errorMessage);
+      throw new Error(`Database connection failed: ${errorMessage}`);
     }
   }
 

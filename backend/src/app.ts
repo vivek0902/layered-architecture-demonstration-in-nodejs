@@ -3,6 +3,9 @@ import express from 'express';
 import cors from 'cors';
 import { config } from './config';
 import apiRoutes from './routes/index.route';
+import { notFoundHandler } from './middleware/notFound.middleware';
+import { errorHandler } from './middleware/errorHandler.middleware';
+
 const app = express();
 
 app.use(
@@ -24,4 +27,11 @@ app.get('/', (_, res) => {
 });
 
 app.use(config.API.PREFIX, apiRoutes);
+
+// 404 Not Found handler
+app.use(notFoundHandler);
+
+// Global Error Handler Middleware
+app.use(errorHandler);
+
 export default app;

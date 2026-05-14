@@ -1,8 +1,16 @@
 import express from 'express';
 import ToolController from '../controllers/tool.controller';
-import ToolService from '../sevices/tool.service';
+import ToolService from '../services/tool.service';
 import ToolRepository from '../repository/tool.repository';
 import { TOOLS_ROUTES } from '../constants';
+import {
+  validateToolCreation,
+  validateToolUpdate,
+  validateToolId,
+  validateBulkDelete,
+  validateBulkCreate,
+} from '../middleware/validate.middleware';
+
 const router = express.Router();
 
 const toolRepository = new ToolRepository();
@@ -11,25 +19,42 @@ const toolController = new ToolController<ToolService<ToolRepository>>(
   toolService,
 );
 
-// localhost:5000/api/tools/
+// GET Routes
 router.get(TOOLS_ROUTES.ALL, toolController.getAllTools);
-
-// localhost:5000/api/tools/popular
 router.get(TOOLS_ROUTES.POPULAR, toolController.getPopularTools);
-
-// localhost:5000/api/tools/category/frontend
 router.get(TOOLS_ROUTES.CATEGORY, toolController.getToolsByCategory);
-
 router.get(TOOLS_ROUTES.BY_ID, toolController.getToolById);
 
-router.post(TOOLS_ROUTES.CREATE, toolController.createTool);
+// POST Routes
+router.post(
+  TOOLS_ROUTES.CREATE,
+  validateToolCreation,
+  toolController.createTool,
+);
+router.post(
+  TOOLS_ROUTES.CREATE_BULK,
+  validateBulkCreate,
+  toolController.createBulkTools,
+);
 
-router.post(TOOLS_ROUTES.CREATE_BULK, toolController.createBulkTools);
+// PUT Routes
+router.put(
+  TOOLS_ROUTES.UPDATE,
+  validateToolId,
+  validateToolUpdate,
+  toolController.updateTool,
+);
 
-router.put(TOOLS_ROUTES.UPDATE, toolController.updateTool);
-
-router.delete(TOOLS_ROUTES.DELETE_BULK, toolController.deleteBulkTools);
-
-router.delete(TOOLS_ROUTES.DELETE_BY_ID, toolController.deleteTool);
+// DELETE Routes
+router.delete(
+  TOOLS_ROUTES.DELETE_BULK,
+  validateBulkDelete,
+  toolController.deleteBulkTools,
+);
+router.delete(
+  TOOLS_ROUTES.DELETE_BY_ID,
+  validateToolId,
+  toolController.deleteTool,
+);
 
 export default router;
